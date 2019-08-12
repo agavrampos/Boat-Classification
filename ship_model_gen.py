@@ -15,7 +15,6 @@ import gc
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 
-
 #%%
 data = pd.read_csv("labels.csv")
 
@@ -23,6 +22,9 @@ data = pd.read_csv("labels.csv")
 label_to_index = {'Cargo': 0, 'Military': 1, 'Carrier': 2, 'Cruise': 3, 'Tankers': 4}
 index_to_label = {v: k for k, v in label_to_index.items()}
 
+#%%
+
+plt.bar([k for k, v in label_to_index.items()], data["category"].value_counts())
 #%%
 IMG_SIZE = 224
 
