@@ -15,7 +15,6 @@ import keras
 import gc
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
-import pickle
 #%%
 data = pd.read_csv("labels.csv")
 
@@ -43,7 +42,7 @@ def preprocess_image(path):
 #%%
 x_train = np.zeros(shape=(len(data.image), IMG_SIZE, IMG_SIZE, 3))
 for i, image in tqdm.tqdm(enumerate(data.image)):
-    x_train[i] = preprocess_image("images\\" + image)
+    x_train[i] = preprocess_image("images/" + image)
 
 
 #%%
@@ -70,8 +69,9 @@ x_train, x_valid, y_train, y_valid = train_test_split(x_train, y_train, test_siz
 datagen = ImageDataGenerator(rotation_range=45,
                              height_shift_range=0.3,
                              width_shift_range=0.3,
-                             horizontal_flip=True) \
-                             .fit(x_train, augment=True, rounds=1, seed=2019)
+                             horizontal_flip=True)
+
+datagen.fit(x_train, augment=True, rounds=1, seed=2019)
 
 train_generator = datagen.flow(x_train, y_train, batch_size=8, seed=2019)
 
@@ -80,6 +80,8 @@ epoch_steps = train_generator.n // train_generator.batch_size
 
 #%%
 fig = plt.figure(figsize=(17, 8.5))
+
+batch = next(train_generator)
 
 for i in range(1, 9):
     ax1 = fig.add_subplot(2, 4, i)
@@ -107,18 +109,12 @@ mcp_save = keras.callbacks.ModelCheckpoint('model-{epoch:03d}-{acc:03f}-{val_acc
 
 reduce_lr_loss = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, mode='min')
 
+csv_logger = keras.callbacks.CSVLogger('training.log')
+
 history = model.fit_generator(generator=train_generator,
                    steps_per_epoch=epoch_steps,
                    epochs=30,
-                   callbacks=[mcp_save, reduce_lr_loss],
+                   callbacks=[mcp_save, reduce_lr_loss, csv_logger],
                    validation_data=[x_valid, y_valid])
-
-f = open('history.pckl', 'wb')
-pickle.dump(history, f)
-f.close()
-
-# f = open('store.pckl', 'rb')
-# obj = pickle.load(f)
-# f.close()
 
 model.save("final.h5")
